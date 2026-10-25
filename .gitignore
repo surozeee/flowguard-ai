@@ -1,0 +1,17 @@
+target/
+build/
+.gradle/
+node_modules/
+dist/
+.env
+*.class
+*.jar
+!**/maven-wrapper.jar
+.idea/
+.vscode/
+*.iml
+.DS_Store
+frontend/dist/
+python-services/**/__pycache__/
+python-services/**/.venv/
+*.pyc
