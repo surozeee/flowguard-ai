@@ -1,0 +1,16 @@
+# Active only for fixture-wallet (see FixtureWalletApplication). Keeps fixture DB settings
+# off the shared classpath when other apps (e.g. backend) start in integration tests.
+spring:
+  config:
+    activate:
+      on-profile: fixture
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowguard?currentSchema=fixture}
+    username: ${SPRING_DATASOURCE_USERNAME:flowguard}
+    password: ${SPRING_DATASOURCE_PASSWORD:flowguard}
+    hikari:
+      connection-init-sql: SET search_path TO fixture
+  flyway:
+    schemas: fixture
+    default-schema: fixture
+    locations: classpath:db/migration/fixture

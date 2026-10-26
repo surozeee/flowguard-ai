@@ -1,0 +1,54 @@
+server:
+  port: 8081
+  shutdown: graceful
+
+spring:
+  application:
+    name: fixture-wallet
+  datasource:
+    hikari:
+      connection-init-sql: SET search_path TO fixture
+  flyway:
+    schemas: fixture
+    default-schema: fixture
+    locations: classpath:db/migration/fixture
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      retries: 5
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: fixture-wallet
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+flowguard:
+  fixture:
+    variant: ${FIXTURE_VARIANT:dup-credit-vulnerable}
+    messaging-enabled: ${FIXTURE_MESSAGING_ENABLED:true}
+    redis-idempotency-enabled: ${FIXTURE_REDIS_IDEMPOTENCY_ENABLED:true}
+    transactions-topic: ${FIXTURE_TRANSACTIONS_TOPIC:flowguard.transactions}
+    saga-events-topic: ${FIXTURE_SAGA_EVENTS_TOPIC:flowguard.saga.events}
+    stale-saga-minutes: ${FIXTURE_STALE_SAGA_MINUTES:5}
+    saga-outbox-poll-ms: ${FIXTURE_SAGA_OUTBOX_POLL_MS:500}
+    transaction-outbox-poll-ms: ${FIXTURE_TRANSACTION_OUTBOX_POLL_MS:500}
+    max-outbox-publish-attempts: ${FIXTURE_MAX_OUTBOX_PUBLISH_ATTEMPTS:5}
+    internal-token: ${FIXTURE_INTERNAL_TOKEN:}
