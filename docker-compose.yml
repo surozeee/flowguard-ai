@@ -1,0 +1,198 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: flowguard
+      POSTGRES_PASSWORD: flowguard
+      POSTGRES_DB: flowguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowguard -d flowguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  kafka:
+    image: apache/kafka-native:3.8.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  fixture-wallet:
+    build:
+      context: ./fixture-wallet
+    ports:
+      - "8081:8081"
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=fixture
+      SPRING_DATASOURCE_USERNAME: flowguard
+      SPRING_DATASOURCE_PASSWORD: flowguard
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FIXTURE_VARIANT: dup-credit-vulnerable
+      FIXTURE_MESSAGING_ENABLED: "true"
+      FIXTURE_REDIS_IDEMPOTENCY_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  flowguard-auth-server:
+    build:
+      context: ./auth-server
+    ports:
+      - "9000:9000"
+    environment:
+      FLOWGUARD_AUTH_ISSUER: http://flowguard-auth-server:9000
+      AUTH_CLIENT_ID: flowguard-gateway
+      AUTH_CLIENT_SECRET: flowguard-gateway-secret
+      AUTH_UI_CLIENT_ID: flowguard-ui
+      AUTH_UI_CLIENT_SECRET: flowguard-ui-secret
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  flowguard-api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8088:8088"
+    environment:
+      API_GATEWAY_PORT: 8088
+      AUTH_INTROSPECT_URL: http://flowguard-auth-server:9000/oauth2/introspect
+      AUTH_CLIENT_ID: flowguard-gateway
+      AUTH_CLIENT_SECRET: flowguard-gateway-secret
+      FLOWGUARD_AUTH_SERVER_URL: http://flowguard-auth-server:9000
+      FLOWGUARD_BACKEND_URL: http://flowguard-backend:8080
+      GATEWAY_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=gateway
+      SPRING_DATASOURCE_USERNAME: flowguard
+      SPRING_DATASOURCE_PASSWORD: flowguard
+      GATEWAY_MESSAGING_ENABLED: "true"
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      flowguard-auth-server:
+        condition: service_healthy
+      flowguard-backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  flowguard-backend:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=metadata
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=fixture
+      SPRING_DATASOURCE_USERNAME: flowguard
+      SPRING_DATASOURCE_PASSWORD: flowguard
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      FIXTURE_WALLET_URL: http://fixture-wallet:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      fixture-wallet:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/monitoring/alerts:/etc/prometheus/alerts:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      flowguard-backend:
+        condition: service_started
+      fixture-wallet:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: flowguard
+      GF_USERS_DEFAULT_THEME: light
+    volumes:
+      - ./docker/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  evidence-processor:
+    build:
+      context: ./python-services/evidence-processor
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: INFO
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+
+  adminer:
+    image: adminer:4.8.1
+    ports:
+      - "8082:8080"
+    depends_on:
+      - postgres
+volumes:
+  postgres_data:
