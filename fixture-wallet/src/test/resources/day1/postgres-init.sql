@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS fixture;
+GRANT ALL ON SCHEMA fixture TO flowguard;
