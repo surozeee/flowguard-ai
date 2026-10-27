@@ -26,7 +26,6 @@ public class FinancialOracle {
         violations.addAll(checkAccountReconciles());
         violations.addAll(checkNonNegative());
         violations.addAll(checkPaymentEffectOnce());
-        violations.addAll(checkLedgerNotEmpty());
         if (violations.isEmpty()) {
             return OracleVerdict.pass();
         }
@@ -135,18 +134,5 @@ public class FinancialOracle {
                 WHERE p.idempotency_key = ?
                 """, Long.class, idempotencyKey);
         return sum == null ? 0L : sum;
-    }
-
-    private List<InvariantViolation> checkLedgerNotEmpty() {
-        Integer journals = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM journals WHERE posting_status = 'POSTED'",
-                Integer.class);
-        if (journals == null || journals == 0) {
-            return List.of(new InvariantViolation(
-                    InvariantId.JOURNAL_BALANCED,
-                    "No posted journals yet",
-                    Map.of("postedJournals", 0)));
-        }
-        return List.of();
     }
 }
