@@ -1,0 +1,8 @@
+flowguard:
+  meta:
+    stub-when-no-key: true
+
+spring:
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
