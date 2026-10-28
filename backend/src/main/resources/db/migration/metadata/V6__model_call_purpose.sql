@@ -1,0 +1,2 @@
+ALTER TABLE model_calls
+  ADD COLUMN IF NOT EXISTS purpose VARCHAR(40);
