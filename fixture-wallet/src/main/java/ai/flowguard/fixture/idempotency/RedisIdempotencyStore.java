@@ -6,8 +6,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -22,7 +20,6 @@ public class RedisIdempotencyStore implements IdempotencyStore {
 
     private final StringRedisTemplate redis;
     private final JdbcTemplate jdbc;
-    private final Map<String, String> localFallback = new HashMap<>();
 
     public RedisIdempotencyStore(StringRedisTemplate redis, JdbcTemplate jdbcTemplate) {
         this.redis = redis;
@@ -31,11 +28,8 @@ public class RedisIdempotencyStore implements IdempotencyStore {
 
     @Override
     public Optional<UUID> findPaymentId(String idempotencyKey) {
-        String local = localFallback.get(idempotencyKey);
-        if (local != null && isPaymentId(local)) {
-            return Optional.of(UUID.fromString(local));
-        }
-        String cached = redis.opsForValue().get(redisKey(idempotencyKey));        if (cached != null && isPaymentId(cached)) {
+        String cached = redis.opsForValue().get(redisKey(idempotencyKey));
+        if (cached != null && isPaymentId(cached)) {
             return Optional.of(UUID.fromString(cached));
         }
         return jdbc.query(
@@ -65,7 +59,6 @@ public class RedisIdempotencyStore implements IdempotencyStore {
 
     @Override
     public void confirm(String idempotencyKey, UUID accountId, UUID paymentId, int ttlSeconds) {
-        localFallback.put(idempotencyKey, paymentId.toString());
         redis.opsForValue().set(redisKey(idempotencyKey), paymentId.toString(), Duration.ofSeconds(ttlSeconds));
         jdbc.update("""
                 INSERT INTO payment_idempotency_audit (idempotency_key, payment_id, account_id)
@@ -76,7 +69,6 @@ public class RedisIdempotencyStore implements IdempotencyStore {
 
     @Override
     public void release(String idempotencyKey) {
-        localFallback.remove(idempotencyKey);
         String current = redis.opsForValue().get(redisKey(idempotencyKey));
         if (current != null && current.startsWith("PENDING:")) {
             redis.delete(redisKey(idempotencyKey));
@@ -85,7 +77,6 @@ public class RedisIdempotencyStore implements IdempotencyStore {
 
     @Override
     public void clearKey(String idempotencyKey) {
-        localFallback.remove(idempotencyKey);
         redis.delete(redisKey(idempotencyKey));
     }
 

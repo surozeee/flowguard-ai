@@ -1,0 +1,11 @@
+flowguard:
+  fixture:
+    variant: reference-safe
+    messaging-enabled: false
+    redis-idempotency-enabled: false
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
