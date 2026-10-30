@@ -1,0 +1,80 @@
+server:
+  port: ${API_GATEWAY_PORT:8088}
+
+spring:
+  application:
+    name: flowguard-api-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        opaque-token:
+          introspection-uri: ${AUTH_INTROSPECT_URL:http://localhost:9000/oauth2/introspect}
+          client-id: ${AUTH_CLIENT_ID:flowguard-gateway}
+          client-secret: ${AUTH_CLIENT_SECRET:flowguard-gateway-secret}
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+  cloud:
+    gateway:
+      routes:
+        - id: flowguard-auth-server
+          uri: ${FLOWGUARD_AUTH_SERVER_URL:http://localhost:9000}
+          predicates:
+            - Path=/oauth2/**,/api/v1/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@clientAddressKeyResolver}"
+
+        - id: flowguard-backend-api
+          uri: ${FLOWGUARD_BACKEND_URL:http://localhost:8080}
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@clientAddressKeyResolver}"
+
+        - id: flowguard-backend-docs
+          uri: ${FLOWGUARD_BACKEND_URL:http://localhost:8080}
+          predicates:
+            - Path=/v3/api-docs/**,/swagger-ui/**,/swagger-ui.html
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@clientAddressKeyResolver}"
+
+flowguard:
+  gateway:
+    backend-url: ${FLOWGUARD_BACKEND_URL:http://localhost:8080}
+    messaging:
+      enabled: ${GATEWAY_MESSAGING_ENABLED:true}
+      partner-id: flowguard-backend
+      backend-base-url: ${FLOWGUARD_BACKEND_URL:http://localhost:8080}
+      max-body-chars: 32768
+      max-partner-attempts: 5
+      partner-retry-delay-ms: 5000
+      metrics-poll-ms: 5000
+      internal-token: ${GATEWAY_INTERNAL_TOKEN:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,prometheus
+  metrics:
+    tags:
+      application: flowguard-api-gateway

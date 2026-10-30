@@ -1,0 +1,16 @@
+# Active only for api-gateway (see ApiGatewayApplication). Avoids gateway DB settings
+# polluting other Spring Boot apps on the integration test classpath.
+spring:
+  config:
+    activate:
+      on-profile: gateway-store
+  datasource:
+    url: ${GATEWAY_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowguard?currentSchema=gateway}
+    username: ${SPRING_DATASOURCE_USERNAME:flowguard}
+    password: ${SPRING_DATASOURCE_PASSWORD:flowguard}
+    hikari:
+      connection-init-sql: SET search_path TO gateway
+  flyway:
+    schemas: gateway
+    default-schema: gateway
+    locations: classpath:db/migration/gateway
