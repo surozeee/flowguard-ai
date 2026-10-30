@@ -1,0 +1,2 @@
+CREATE SCHEMA IF NOT EXISTS gateway;
+GRANT ALL ON SCHEMA gateway TO flowguard;

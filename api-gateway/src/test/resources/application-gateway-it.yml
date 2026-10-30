@@ -1,0 +1,21 @@
+spring:
+  cloud:
+    gateway:
+      routes: []
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
+
+flowguard:
+  gateway:
+    messaging:
+      enabled: true
+      partner-id: test-partner
+      max-partner-attempts: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
