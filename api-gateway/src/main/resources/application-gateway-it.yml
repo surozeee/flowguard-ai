@@ -1,0 +1,15 @@
+spring:
+  cloud:
+    gateway:
+      routes: []
+
+flowguard:
+  gateway:
+    messaging:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
