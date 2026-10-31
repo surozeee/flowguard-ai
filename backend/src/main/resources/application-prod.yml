@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+  data:
+    redis:
+      timeout: 3000ms
+  kafka:
+    listener:
+      ack-mode: record
+      concurrency: 2
+
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    ai.flowguard: INFO
+
+flowguard:
+  production:
+    guards-enabled: ${FLOWGUARD_PRODUCTION_GUARDS:false}

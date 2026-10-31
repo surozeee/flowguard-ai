@@ -1,0 +1,19 @@
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    ai.flowguard: INFO
+
+flowguard:
+  production:
+    guards-enabled: ${FLOWGUARD_PRODUCTION_GUARDS:false}
+  gateway:
+    messaging:
+      enabled: ${GATEWAY_MESSAGING_ENABLED:true}

@@ -1,0 +1,43 @@
+# Production-like overlay: reference-safe fixture, OAuth, internal tokens, startup guards.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Required for real deployments: set GATEWAY_INTERNAL_TOKEN and FLOWGUARD_API_KEY in .env (16+ chars).
+
+services:
+  fixture-wallet:
+    environment:
+      FIXTURE_VARIANT: reference-safe
+      FIXTURE_MESSAGING_ENABLED: "true"
+      FIXTURE_REDIS_IDEMPOTENCY_ENABLED: "true"
+      FIXTURE_INTERNAL_TOKEN: ${FIXTURE_INTERNAL_TOKEN:-flowguard-fixture-internal-prod}
+
+  flowguard-auth-server:
+    environment:
+      FLOWGUARD_AUTH_ISSUER: http://flowguard-auth-server:9000
+
+  flowguard-api-gateway:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      FLOWGUARD_PRODUCTION_GUARDS: "true"
+      GATEWAY_INTERNAL_TOKEN: ${GATEWAY_INTERNAL_TOKEN:-flowguard-gateway-internal-prod-token}
+      GATEWAY_MESSAGING_ENABLED: "true"
+
+  flowguard-backend:
+    environment:
+      FLOWGUARD_PRODUCTION_GUARDS: "true"
+      FLOWGUARD_API_KEY: ${FLOWGUARD_API_KEY:-flowguard-backend-ops-api-key}
+      FLOWGUARD_OAUTH_ENABLED: "true"
+      AUTH_INTROSPECT_URL: http://flowguard-auth-server:9000/oauth2/introspect
+      AUTH_CLIENT_ID: flowguard-gateway
+      AUTH_CLIENT_SECRET: flowguard-gateway-secret
+      FIXTURE_INTERNAL_TOKEN: ${FIXTURE_INTERNAL_TOKEN:-flowguard-fixture-internal-prod}
+      FIXTURE_WALLET_URL: http://fixture-wallet:8081
+      FLOWGUARD_API_GATEWAY_URL: http://flowguard-api-gateway:8088
+      GATEWAY_INTERNAL_TOKEN: ${GATEWAY_INTERNAL_TOKEN:-flowguard-gateway-internal-prod-token}
+      FLOWGUARD_MESSAGING_ENABLED: "true"
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+
+  prometheus:
+    volumes:
+      - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/monitoring/alerts:/etc/prometheus/alerts:ro
