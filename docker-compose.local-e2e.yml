@@ -1,0 +1,42 @@
+# Avoid port clashes with other local Postgres/Redis/MinIO (5432, 6379, 9000).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.local-e2e.yml up -d --build
+
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+
+  redis:
+    ports:
+      - "6380:6379"
+
+  kafka:
+    ports:
+      - "9093:9092"
+    environment:
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9093
+
+  flowguard-auth-server:
+    ports:
+      - "9001:9000"
+    environment:
+      FLOWGUARD_AUTH_ISSUER: http://localhost:9001
+
+  fixture-wallet:
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=fixture
+      SPRING_DATA_REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  flowguard-backend:
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=metadata
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/flowguard?currentSchema=fixture
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  flowguard-api-gateway:
+    ports:
+      - "8088:8088"
+    environment:
+      AUTH_INTROSPECT_URL: http://flowguard-auth-server:9000/oauth2/introspect
+      FLOWGUARD_AUTH_SERVER_URL: http://flowguard-auth-server:9000

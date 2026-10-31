@@ -1,0 +1,18 @@
+# Avoid clashing with other local stacks on 5432/6379/9000 (Compose 2.24+ merge tags).
+# Inter-service URLs stay on the default Docker network (postgres:5432, redis:6379, etc.).
+services:
+  postgres:
+    ports: !reset
+      - "5433:5432"
+  redis:
+    ports: !reset []
+  flowguard-auth-server:
+    ports: !reset
+      - "9001:9000"
+  flowguard-backend:
+    ports: !reset []
+  fixture-wallet:
+    ports: !reset []
+  flowguard-api-gateway:
+    environment:
+      GATEWAY_MESSAGING_ENABLED: "false"

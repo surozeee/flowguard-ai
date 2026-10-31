@@ -1,0 +1,5 @@
+flowguard:
+  fixture:
+    variant: reference-safe
+    messaging-enabled: true
+    redis-idempotency-enabled: true
