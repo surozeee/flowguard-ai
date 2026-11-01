@@ -1,0 +1,83 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Saga completed (rate)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(flowguard_fixture_saga_completed_total[5m])",
+          "legendFormat": "completed"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Idempotency replay / in-progress rejected",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(flowguard_fixture_saga_replay_total[5m])",
+          "legendFormat": "replay"
+        },
+        {
+          "expr": "rate(flowguard_fixture_saga_in_progress_rejected_total[5m])",
+          "legendFormat": "in_progress_rejected"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Outbox DLQ (totals)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "flowguard_fixture_saga_outbox_dlq_total",
+          "legendFormat": "saga_dlq"
+        },
+        {
+          "expr": "flowguard_fixture_transaction_outbox_dlq_total",
+          "legendFormat": "txn_dlq"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Choreography duplicate skipped",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(flowguard_saga_choreography_duplicate_skipped_total[5m])",
+          "legendFormat": "skipped"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["flowguard", "saga"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "FlowGuard Saga & Outbox",
+  "uid": "flowguard-saga",
+  "version": 1
+}

@@ -1,0 +1,80 @@
+{
+  "title": "FlowGuard Enterprise Processing",
+  "uid": "flowguard-enterprise",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Gateway inbox received (rate)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(flowguard_gateway_inbox_received_total[5m])",
+          "legendFormat": "inbox/s"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Partner outbox success (rate)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(flowguard_gateway_partner_outbox_success_total[5m])",
+          "legendFormat": "success/s"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Partner outbox failures (rate)",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(flowguard_gateway_partner_outbox_failure_total[5m])",
+          "legendFormat": "fail/s"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Fixture saga outbox DLQ",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "flowguard_fixture_saga_outbox_dlq_total",
+          "legendFormat": "dlq"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gateway partner outbox outcomes",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(flowguard_gateway_partner_outbox_success_total[1m])",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "rate(flowguard_gateway_partner_outbox_failure_total[1m])",
+          "legendFormat": "failure"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Saga choreography duplicates skipped",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "rate(flowguard_saga_choreography_duplicate_skipped_total[1m])",
+          "legendFormat": "skipped"
+        }
+      ]
+    }
+  ]
+}

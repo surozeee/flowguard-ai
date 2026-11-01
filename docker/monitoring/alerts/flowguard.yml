@@ -1,0 +1,58 @@
+groups:
+  - name: flowguard_saga_outbox
+    rules:
+      - alert: SagaOutboxDlqGrowth
+        expr: increase(flowguard_fixture_saga_outbox_dlq_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Saga outbox DLQ received new rows
+          description: At least one saga event failed max publish attempts and moved to DLQ.
+
+      - alert: TransactionOutboxDlqGrowth
+        expr: increase(flowguard_fixture_transaction_outbox_dlq_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: Transaction outbox DLQ received new rows
+          description: Settlement events may not be reaching Kafka consumers.
+
+      - alert: SagaReaperActivity
+        expr: increase(flowguard_fixture_saga_reaped_total[15m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Stale payment sagas were reaped
+          description: Investigate stuck sagas and incomplete choreography on fixture.
+
+      - alert: IdempotencyContentionHigh
+        expr: rate(flowguard_fixture_saga_in_progress_rejected_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: Elevated idempotency in-progress rejections
+          description: Clients may be retrying too aggressively on the same idempotency keys.
+
+  - name: flowguard_gateway
+    rules:
+      - alert: GatewayPartnerOutboxDlq
+        expr: flowguard_gateway_partner_outbox_dlq_count > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Gateway partner outbox DLQ has rows
+          description: Partner calls from the API gateway failed after max retries.
+
+      - alert: GatewayInboxBacklog
+        expr: flowguard_gateway_inbox_open > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated gateway inbox backlog
+          description: Ingress requests may be stalling before partner completion.
