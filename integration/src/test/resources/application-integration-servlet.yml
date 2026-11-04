@@ -1,0 +1,22 @@
+# Servlet stacks launched from integration tests (api-gateway is on the test classpath).
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.cloud.gateway.config.GatewayAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayClassPathWarningAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayReactiveLoadBalancerClientAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayRedisAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayMetricsAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayNoLoadBalancerClientAutoConfiguration
+      - org.springframework.cloud.gateway.config.SimpleUrlHandlerMappingGlobalCorsAutoConfiguration
+      - org.springframework.cloud.gateway.config.GatewayFunctionRouteAutoConfiguration
+  cloud:
+    gateway:
+      enabled: false
+  main:
+    web-application-type: servlet
+
+management:
+  endpoint:
+    health:
+      validate-group-membership: false

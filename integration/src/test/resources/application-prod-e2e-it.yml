@@ -1,0 +1,1 @@
+# Used via @ActiveProfiles on production E2E tests (fixture module classpath not required)
