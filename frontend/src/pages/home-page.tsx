@@ -64,12 +64,7 @@ export function HomePage() {
             })
           )}
         </div>
-        <p className="lab-note">
-          Lab note: a repeated credit key should return the same payment. Transfers still post straight to the ledger.
-        </p>
-        <button type="button" onClick={() => window.location.reload()}>
-          Reload dependency check
-        </button>        <div className="action-grid">
+        <div className="action-grid">
           <Link className="action-card" to="/transactions/new">
             <strong>Create credit</strong>
             <span>Post an idempotent payment and replay the same key.</span>
@@ -78,7 +73,10 @@ export function HomePage() {
             <strong>Create transfer</strong>
             <span>Run orchestrator saga plus Kafka choreography end to end.</span>
           </Link>
-
+          <Link className="action-card" to="/present">
+            <strong>Enterprise briefing</strong>
+            <span>Title, product story, and UI/UX principles as slides.</span>
+          </Link>
           <Link className="action-card" to="/investigate">
             <strong>Start investigation</strong>
             <span>Hypothesize duplicate-credit risk and probe the fixture.</span>
